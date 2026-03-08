@@ -1,1 +1,48 @@
+name: Agent Identity CI
 
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies (if package.json exists)
+        run: |
+          if [ -f package.json ]; then
+            npm install
+          else
+            echo "No package.json found, skipping install"
+          fi
+
+      - name: Validate JSON files
+        run: |
+          for file in $(find . -name "*.json"); do
+            echo "Checking $file"
+            cat "$file" | jq empty
+          done
+
+      - name: Validate YAML files
+        run: |
+          pip install yamllint
+          yamllint .
+
+      - name: Repository check
+        run: |
+          echo "Repository structure:"
+          ls -la
+          echo "Workflow completed successfully"
